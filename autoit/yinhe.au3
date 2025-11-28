@@ -159,7 +159,7 @@ EndFunc
 Func _DlgClickButton($idDebug, $strTitle, $strButton)
 ; $hDlgWnd = WinWait($strTitle, $strButton, 5)
   $iCount = 0
-  While $iCount < 5
+  While $iCount < 10
     $hDlgWnd = WinWait($strTitle, $strButton, 1)
     If $hDlgWnd <> 0 Then ExitLoop
     _closeNewDlg($idDebug)
@@ -169,9 +169,21 @@ Func _DlgClickButton($idDebug, $strTitle, $strButton)
   If $hDlgWnd <> 0 Then
     _CtlClickButton($hDlgWnd, $idDebug, $strButton)
   Else
-    _CtlDebug($idDebug, '5秒内没找到对话框"' & $strTitle & '"和按钮"' & $strButton & '"')
+    _CtlDebug($idDebug, '10秒内没找到对话框"' & $strTitle & '"和按钮"' & $strButton & '"')
   EndIf
 EndFunc
+
+#cs
+Func _DlgCloseButton($idDebug, $strTitle, $strButton = '关闭')
+  $hNewWnd = WinGetHandle($strTitle, $strButton)
+  If $hNewWnd <> 0 Then
+    _CtlClickButton($hNewWnd, $idDebug, $strButton)
+    _CtlDebug($idDebug, '"' & $strButton & '"对话框"' & $strTitle & '"')
+    Return True
+  EndIf
+  Return False
+EndFunc
+#ce
 
 Func _DlgClose($idDebug, $strTitle, $strText = '关闭')
   $hNewWnd = WinGetHandle($strTitle, $strText)
@@ -293,9 +305,83 @@ Func AppClose($hWnd, $idDebug)
   _DlgClickButton($idDebug, '退出确认', '退出系统')
 EndFunc
 
-Func _addSymbolSpecialKey($idDebug, $strSymbol)
-  If $strSymbol == '160216' Or $strSymbol == '160416' Or $strSymbol == '160717' Or $strSymbol == '161116'  Or $strSymbol == '161125' Or $strSymbol == '161126' Or $strSymbol == '161127' Or $strSymbol == '161128' Or $strSymbol == '161226' Or $strSymbol == '163208' Or $strSymbol == '164824' Or $strSymbol == '164906' Or $strSymbol == '161130' Then
-    _DlgClickButton($idDebug, '请选择', '深圳股票')
+Func _getHuabaoFundName($strSymbol)
+  Switch $strSymbol
+    Case '160216'
+      $strName = '国泰商品LOF'
+    Case '160416'
+      $strName = '石油基金LOF'
+    Case '160717'
+      $strName = 'H股LOF'
+    Case '160719'
+      $strName = '嘉实黄金LOF'
+    Case '160723'
+      $strName = '嘉实原油LOF'
+    Case '163208'
+      $strName = '全球油气能源LOF'
+    Case Else
+      $strName = False
+  EndSwitch
+  return $strName
+EndFunc
+
+Func _getYinheFundName($strSymbol)
+  Switch $strSymbol
+    Case '160216'
+      $strName = '国泰商品'
+    Case '160416'
+      $strName = '石油基金'
+    Case '160717'
+      $strName = '恒生H股'
+    Case '160719'
+      $strName = '嘉实黄金'
+    Case '160723'
+      $strName = '嘉实原油'
+    Case '161116'
+      $strName = '易基黄金'
+    Case '161124'
+      $strName = '香港小盘'
+    Case '161125'
+      $strName = '标普500'
+    Case '161126'
+      $strName = '标普医药'
+    Case '161127'
+      $strName = '标普生物'
+    Case '161128'
+      $strName = '标普科技'
+    Case '161129'
+      $strName = '原油基金'
+    Case '161130'
+      $strName = '纳指LOF'
+    Case '161226'
+      $strName = '白银基金'
+    Case '163208'
+      $strName = '诺安油气'
+    Case '164701'
+      $strName = '黄金LOF'
+    Case '164824'
+      $strName = '印度基金'
+    Case '164906'
+      $strName = '中国互联'
+    Case Else
+      $strName = False
+  EndSwitch
+  return $strName
+EndFunc
+
+Func _getFundName($iSoftware, $strSymbol)
+  If ($iSoftware == $YINHE) Then
+    $strName = _getYinheFundName($strSymbol)
+  Else
+    $strName = _getHuabaoFundName($strSymbol)
+  EndIf
+  return $strName
+EndFunc
+
+Func _addSymbolSpecialKey($iSoftware, $idDebug, $strSymbol)
+  $strName = _getFundName($iSoftware, $strSymbol)
+  If  $strName <> False Then
+    _DlgClickButton($idDebug, '提示', '深圳(' & $strName & ')')
   EndIf
 EndFunc
 
@@ -449,7 +535,7 @@ EndFunc
 #ce
 
 Func _huabaoAddOrderEntry($hWnd, $idDebug, $strControlID, $strAccount, $strSymbol, $strAmount)
-  If _CtlSendString($hWnd, $idDebug, 'Edit1', $strSymbol) Then _addSymbolSpecialKey($idDebug, $strSymbol)
+  If _CtlSendString($hWnd, $idDebug, 'Edit1', $strSymbol) Then _addSymbolSpecialKey($HUABAO, $idDebug, $strSymbol)
   ControlCommand($hWnd, '', $strControlID, 'SelectString', $strAccount)
 
   $strCash = _CtlGetText($hWnd, $idDebug, 'Static24')
@@ -484,7 +570,9 @@ Func _getFundAmount($strSymbol)
     Case '501300'
       $strAmount = '100'
     Case '164906'
-      $strAmount = '5000'
+      $strAmount = '10000'
+    Case '501018'
+      $strAmount = '100'
     Case '160216'
       $strAmount = '10000'
     Case '160416'
@@ -496,17 +584,17 @@ Func _getFundAmount($strSymbol)
     Case '161129'
       $strAmount = '100'
     Case '161125'
-      $strAmount = '100'
+      $strAmount = '50'
     Case '161126'
       $strAmount = '100'
     Case '161127'
       $strAmount = '100'
     Case '161128'
-      $strAmount = '100'
+      $strAmount = '50'
     Case '161130'
-      $strAmount = '100'
+      $strAmount = '10'
     Case '161226'
-      $strAmount = '50000'
+      $strAmount = '100'
     Case '162411'
       $strAmount = '100'
     Case '163208'
@@ -523,11 +611,23 @@ Func _getFundAmount($strSymbol)
   return $strAmount
 EndFunc
 
-Func YinheOrderOutTransferFund($hWnd, $idDebug, $strSymbol)
+
+Func YinheOrderOutTransferFundBatch($hWnd, $idDebug, $strSymbol)
+    Local $aFunds = StringSplit($strSymbol, "|")
+
+    ; 判断是否拆分成功
+    If @error Then
+      MsgBox(16, "错误", "没有获取到任何基金")
+      Exit
+    EndIf
+
     _CtlDebug($idDebug, "YinheOrderOutTransferFund start...")
     ; 获取 Afx 控件句柄
-    Local $controlID = "[CLASS:Afx:10000000:0:10003:0:0; INSTANCE:1]" ; 根据实际类名和实例号替换
+    Local $controlID = "[CLASS:Afx:10000000:0:00010003:00000000:00000000; INSTANCE:1]" ; 根据实际类名和实例号替换
     Local $hControl = ControlGetHandle($hWnd, "", $controlID)
+    ; 聚焦控件
+    ControlFocus($hWnd, "", $hControl)
+    ControlClick($hControl, '', '', 'Left', 1, 100, 50)
 
     ; 确保控件句柄有效
     If $hControl = 0 Then
@@ -535,9 +635,25 @@ Func YinheOrderOutTransferFund($hWnd, $idDebug, $strSymbol)
         Exit
     EndIf
 
-    ; 聚焦控件
-    ControlFocus($hWnd, "", $hControl)
-    ControlClick($hControl, '', '', 'Left', 1, 100, 50)
+    For $i = 1 To $aFunds[0]:
+      Local $fundCode = $aFunds[$i]:
+      ; 这里可以调用你的批量操作函数
+      YinheOrderOutTransferFund($hWnd, $hControl, $idDebug, $fundCode)
+    Next
+EndFunc
+
+Func YinheOrderOutTransferFund($hWnd, $hControl, $idDebug, $strSymbol)
+
+    _CtlDebug($idDebug, "YinheOrderOutTransferFund start...")
+    ;~ ; 获取 Afx 控件句柄
+    ;~ Local $controlID = "[CLASS:Afx:10000000:0:00010003:00000000:00000000; INSTANCE:1]" ; 根据实际类名和实例号替换
+    ;~ Local $hControl = ControlGetHandle($hWnd, "", $controlID)
+
+    ;~ ; 确保控件句柄有效
+    ;~ If $hControl = 0 Then
+    ;~     MsgBox("ok", "Error", "无法获取 Afx 控件句柄。")
+    ;~     Exit
+    ;~ EndIf
 
     $strControlID = 'SysTreeView323'
     _clickTreeItemOut($hWnd, $idDebug, $strControlID, '基金转托管')
@@ -581,10 +697,11 @@ Func YinheOrderOutTransferFund($hWnd, $idDebug, $strSymbol)
 
 EndFunc
 
-Func YinheOrderOutFund($hWnd, $idDebug, $strSymbol)
-    _CtlDebug($idDebug, "YinheOrderOutFund start...")
+
+Func YinheOrderOutFundBatch($hWnd, $idDebug, $strSymbol)
+    Local $aFunds = StringSplit($strSymbol, "|")
     ; 获取 Afx 控件句柄
-    Local $controlID = "[CLASS:Afx:10000000:0:10003:0:0; INSTANCE:1]" ; 根据实际类名和实例号替换
+    Local $controlID = "[CLASS:Afx:10000000:0:00010003:00000000:00000000; INSTANCE:1]" ; 根据实际类名和实例号替换
     Local $hControl = ControlGetHandle($hWnd, "", $controlID)
 
     ; 确保控件句柄有效
@@ -597,8 +714,26 @@ Func YinheOrderOutFund($hWnd, $idDebug, $strSymbol)
     ControlFocus($hWnd, "", $hControl)
     ControlClick($hControl, '', '', 'Left', 1, 100, 50)
 
+    ; 确保控件句柄有效
+    If $hControl = 0 Then
+        MsgBox("ok", "Error", "无法获取 Afx 控件句柄。")
+        Exit
+    EndIf
+
+    For $i = 1 To $aFunds[0]:
+      Local $fundCode = $aFunds[$i]:
+      ; 这里可以调用你的批量操作函数
+      YinheOrderOutFund($hWnd, $idDebug, $fundCode)
+    Next
+EndFunc
+
+
+Func YinheOrderOutFund($hWnd, $idDebug, $strSymbol)
+    _CtlDebug($idDebug, "YinheOrderOutFund start...")
+
     $strControlID = 'SysTreeView323'
     _clickTreeItemOut($hWnd, $idDebug, $strControlID, '基金申购')
+    Sleep(1000)
     _CtlWaitText($hWnd, $idDebug, 'Static1', '基金代码:')
 
     $controlID = "Edit1"
@@ -643,11 +778,23 @@ Func YinheEditInput($hWnd, $idDebug, $controlID, $text)
     Sleep(500)
 EndFunc
 
+
+Func YinheOrderFundBatch($hWnd, $idDebug, $strSymbol)
+    Local $aFunds = StringSplit($strSymbol, "|")
+
+    For $i = 1 To $aFunds[0]:
+      Local $fundCode = $aFunds[$i]:
+      ; 这里可以调用你的批量操作函数
+      YinheOrderFund($hWnd, $idDebug, $fundCode)
+    Next
+EndFunc
+
+
 Func YinheOrderFund($hWnd, $idDebug, $strSymbol)
   $strAmount = _getFundAmount($strSymbol)
   _clickTreeItem($hWnd, $idDebug, '场内开放式基金', '多股东基金申购')
   _CtlWaitText($hWnd, $idDebug, 'Static1', '基金代码:')
-  If _CtlSendString($hWnd, $idDebug, 'Edit1', $strSymbol) Then _addSymbolSpecialKey($idDebug, $strSymbol)
+  If _CtlSendString($hWnd, $idDebug, 'Edit1', $strSymbol) Then _addSymbolSpecialKey($YINHE, $idDebug, $strSymbol)
   $strCash = _CtlGetText($hWnd, $idDebug, 'Static5')
 
   $strControlID = 'SysListView321'
@@ -753,9 +900,8 @@ Func YinheConvertBond($hWnd, $idProgress, $idDebug, Const ByRef $arAccountNumber
   EndFunc
 
 
-Func HuabaoOrderOutFund($hWnd, $idDebug, $strSymbol)
-    $strAmount = _getFundAmount($strSymbol)
-    _CtlDebug($idDebug, "HuabaoOrderOutFund start...")
+Func HuabaoOrderOutFundBatch($hWnd, $idDebug, $strSymbol)
+    Local $aFunds = StringSplit($strSymbol, "|")
     ; 获取 Afx 控件句柄
     Local $controlID = "[CLASS:Afx:10000000:0:10003:0:0; INSTANCE:1]" ; 根据实际类名和实例号替换
     Local $hControl = ControlGetHandle($hWnd, "", $controlID)
@@ -769,44 +915,54 @@ Func HuabaoOrderOutFund($hWnd, $idDebug, $strSymbol)
     ; 聚焦控件
     ControlFocus($hWnd, "", $hControl)
     ControlClick($hControl, '', '', 'Left', 1, 125, 30)
-    Sleep(1000)
+    Sleep(500)
+
+    For $i = 1 To $aFunds[0]:
+      Local $fundCode = $aFunds[$i]:
+      ; 这里可以调用你的批量操作函数
+      HuabaoOrderOutFund($hWnd, $idDebug, $fundCode)
+    Next
+EndFunc
+
+Func HuabaoOrderOutFund($hWnd, $idDebug, $strSymbol)
+    $strAmount = _getFundAmount($strSymbol)
+    _CtlDebug($idDebug, "HuabaoOrderOutFund start...")
     $strControlID = 'SysTreeView323'
     $strLevel1 = '基金申购'
     _clickTreeItemOut($hWnd, $idDebug, $strControlID, $strLevel1)
-    Sleep(1000)
+    Sleep(500)
+    ControlSetText($hWnd, "", "Edit17", "")
+    Sleep(500)
     _CtlWaitText($hWnd, $idDebug, 'Static98', '基金代码:')
     _CtlSendString($hWnd, $idDebug, 'Edit17', $strSymbol)
     ControlClick($hWnd, '', 'Button20')
-    Sleep(2000)
-;~     Sleep(100)
+    Sleep(500)
+
     $strControlID = 'SysListView322'
     $idListView = ControlGetHandle($hWnd, '', $strControlID)
-     $iItemCount = _GUICtrlListView_GetItemCount($idListView)
-      $iItemCount = ControlListView($hWnd, '', $strControlID, 'GetItemCount')
-      $iItemCount=1
-      $arWinPos = WinGetPos($idListView)
- For $i = 0 To $iItemCount - 1
-    $arRect = _GUICtrlListView_GetItemPosition($idListView, $i)
+    $iItemCount = ControlListView($hWnd, '', $strControlID, 'GetItemCount')
+    If $iItemCount < 1 Then
+        _CtlDebug($idDebug, "错误：查询结果列表为空，无法双击。")
+        Return
+    EndIf
+    $arWinPos = WinGetPos($idListView)
+
+    $arRect = _GUICtrlListView_GetItemPosition($idListView, 0)
     MouseClick($MOUSE_CLICK_PRIMARY, $arWinPos[0] + $arRect[0] + 10, $arWinPos[1] + $arRect[1] + 10, 2)
-  Next
-  _CtlDebug($idDebug, "HuabaoOrderOutFund amount:" & $strAmount)
-    Sleep(1000)
+    Sleep(500)
+
+    _CtlDebug($idDebug, "HuabaoOrderOutFund amount:" & $strAmount)
+
     _CtlWaitText($hWnd, $idDebug, 'Static72', '申购金额:')
     _CtlSendString($hWnd, $idDebug, 'Edit12', $strAmount)
     ControlClick($hWnd, '', 'Button19')
-    HuabaoQue()
-    Sleep(1000)
-  _DlgClickButton($idDebug, '适当性匹配检查', '确认')
-    HuabaoQue()
-    Sleep(1000)
-  _DlgClickButton($idDebug, '适当性匹配检查', '确认')
-  _DlgClickButton($idDebug, '金融产品适当性评估结果确认书', '确认')
-  _DlgClickButton($idDebug, '适当性匹配检查', '确认')
-  _DlgClickButton($idDebug, '适当性匹配检查', '确认')
-    _DlgClickButton($idDebug, '请认真阅读产品信息', '本人已阅读并确认了解' & $strSymbol & '基金产品情况及购买风险')
-    _DlgClickButton($idDebug, '请认真阅读产品信息', '下一步')
-    HuabaoQue()
-    Sleep(1000)
+    _DlgClickButton($idDebug, '', '确认')
+    _DlgClickButton($idDebug, '', '确认')
+    _DlgClickButton($idDebug, '请认真阅读产品信息', '我已阅读并理解以上基金合同、招募说明书、基金产品资料概要、适当性评估结果确认书、风险揭示书、风险申明书、客户维护费揭示等电子协议，同意并签署协议，即已理解并愿意自行承担风险和损失')
+    _DlgClickButton($idDebug, '请认真阅读产品信息', '签署协议')
+    Sleep(500)
+    _DlgClickButton($idDebug, '', '确认')
+    Sleep(500)
     _DlgClickButton($idDebug, '基金交易', '确认')
     _DlgClickButton($idDebug, '提示', '确认')
 EndFunc
@@ -822,6 +978,16 @@ Func HuabaoQue()
     Else
         ConsoleWrite("Popup window not found." & @CRLF)
     EndIf
+EndFunc
+
+Func HuabaoOrderFundBatch($hWnd, $idDebug, $strSymbol)
+    Local $aFunds = StringSplit($strSymbol, "|")
+
+    For $i = 1 To $aFunds[0]:
+      Local $fundCode = $aFunds[$i]:
+      ; 这里可以调用你的批量操作函数
+      HuabaoOrderFund($hWnd, $idDebug, $fundCode)
+    Next
 EndFunc
 
 Func HuabaoOrderFund($hWnd, $idDebug, $strSymbol)
@@ -868,7 +1034,7 @@ Func _sendSellQuantity($hWnd, $idDebug, $iTotal = 0, $strCtlAvailable = 'Static8
 EndFunc
 
 Func _yinheAddShenzhenRedeemEntry($hWnd, $idDebug, $strSymbol, $strSellQuantity, ByRef $iRemainQuantity)
-  If _CtlSendString($hWnd, $idDebug, 'Edit1', $strSymbol) Then _addSymbolSpecialKey($idDebug, $strSymbol)
+  If _CtlSendString($hWnd, $idDebug, 'Edit1', $strSymbol) Then _addSymbolSpecialKey($YINHE, $idDebug, $strSymbol)
 
   $iSell = _sendSellQuantity($hWnd, $idDebug, $iRemainQuantity, 'Static9', 'Edit2')
   If $iSell > 0 Then
@@ -899,8 +1065,8 @@ Func YinheRedeemFund($hWnd, $idDebug, $strSymbol, $strSellQuantity, ByRef $iRema
   Return True
 EndFunc
 
-Func _sendSellSymbol($hWnd, $idDebug, $strSymbol)
-  If _CtlSendString($hWnd, $idDebug, 'AfxWnd423', $strSymbol) Then _addSymbolSpecialKey($idDebug, $strSymbol)
+Func _sendSellSymbol($hWnd, $iSoftware, $idDebug, $strSymbol)
+  If _CtlSendString($hWnd, $idDebug, 'AfxWnd421', $strSymbol) Then _addSymbolSpecialKey($iSoftware, $idDebug, $strSymbol)
 EndFunc
 
 Func _getSellStaticIndex($iSoftware, $iIndex)
@@ -928,7 +1094,7 @@ Func _clickTreeSell($hWnd, $iSoftware, $idDebug)
 EndFunc
 
 Func _addSellEntry($hWnd, $iSoftware, $idDebug, $strSymbol, $strPrice, $strSellQuantity, ByRef $iRemainQuantity)
-  _sendSellSymbol($hWnd, $idDebug, $strSymbol)
+  _sendSellSymbol($hWnd, $iSoftware, $idDebug, $strSymbol)
   $strPriceControl = 'Edit2'
   $strSuggestedPrice = _CtlGetText($hWnd, $idDebug, $strPriceControl)
   If $strPrice <> '' Then
@@ -980,8 +1146,7 @@ Func RunSell($hWnd, $iSoftware, $idDebug, $strSymbol, $strPrice, $strSellQuantit
 EndFunc
 
 Func _addMoneyMangeEntry($hWnd, $iSoftware, $idDebug)
-; _sendSellSymbol($hWnd, $idDebug, '131810')
-  _sendSellSymbol($hWnd, $idDebug, '204001')
+  _sendSellSymbol($hWnd, $iSoftware, $idDebug, '204001')
   $strPriceControl = 'Edit2'
   $strSuggestedPrice = _CtlGetText($hWnd, $idDebug, $strPriceControl)
   $fPrice = Number($strSuggestedPrice, 3)
@@ -1074,7 +1239,7 @@ Func _addOtherAccount($hWnd, $iSoftware, $idDebug, $strAccount, $strPassword)
   Send('{ENTER}')
   Sleep(1000)
   _closeNewDlg($idDebug)
-  _loginDlg($iSoftware, $idDebug, '添加帐号', $strAccount, $strPassword)
+  _loginDlg($iSoftware, $idDebug, '加账号', $strAccount, $strPassword)
 EndFunc
 
 Func RunLoginOnly($hWnd, $idProgress, $iSoftware, $idDebug, Const ByRef $arAccountNumber, Const ByRef $arAccountPassword, Const ByRef $arAccountChecked, $iMax, $iCur)
@@ -1177,21 +1342,21 @@ Func RunOperation($iSoftware, $idProgress, $idDebug)
       $hWnd = AppOpen($iSoftware, $idDebug, $arAccountNumber[$i], $strPassword)
       If _getProfileInt('Order') == $GUI_CHECKED Then
         If ($iSoftware == $YINHE) Then
-          YinheOrderFund($hWnd, $idDebug, $strSymbol)
+          YinheOrderFundBatch($hWnd, $idDebug, $strSymbol)
         Else
-          HuabaoOrderFund($hWnd, $idDebug, $strSymbol)
+          HuabaoOrderFundBatch($hWnd, $idDebug, $strSymbol)
         EndIf
       ElseIf _getProfileInt('OrderOut') == $GUI_CHECKED Then
         If ($iSoftware == $YINHE) Then
-            YinheOrderOutFund($hWnd, $idDebug, $strSymbol)
+          YinheOrderOutFundBatch($hWnd, $idDebug, $strSymbol)
         Else
-          HuabaoOrderOutFund($hWnd, $idDebug, $strSymbol)
+          HuabaoOrderOutFundBatch($hWnd, $idDebug, $strSymbol)
         EndIf
-        ElseIf _getProfileInt('OrderOutTransfer') == $GUI_CHECKED Then
+      ElseIf _getProfileInt('OrderOutTransfer') == $GUI_CHECKED Then
         If ($iSoftware == $YINHE) Then
-            YinheOrderOutTransferFund($hWnd, $idDebug, $strSymbol)
+          YinheOrderOutTransferFundBatch($hWnd, $idDebug, $strSymbol)
         Else
-            _CtlDebug($idDebug, "华宝PC端不支持转托管...")
+          _CtlDebug($idDebug, "华宝PC端不支持转托管...")
         EndIf
       ElseIf _getProfileInt('Redeem') == $GUI_CHECKED Then
         If YinheRedeemFund($hWnd, $idDebug, $strSymbol, $strSellQuantity, $iRemainQuantity) == False Then
@@ -1203,6 +1368,14 @@ Func RunOperation($iSoftware, $idProgress, $idDebug)
           AppClose($hWnd, $idDebug)
           ExitLoop
         EndIf
+      ;~ ===================申购==========================
+      ElseIf _getProfileInt('ConvertBond') == $GUI_CHECKED Then
+        YinheConvertBond($hWnd, $idProgress, $idDebug, $arAccountNumber, $arAccountPassword, $arAccountChecked, $iMax, $i)
+;~    ===================查询==========================
+      ElseIf _getProfileInt('Allocate') == $GUI_CHECKED Then
+        If YinheAllocate($hWnd, $idProgress, $idDebug, $arAccountNumber, $arAccountPassword, $arAccountChecked, $iMax, $i) > 0 Then
+                    ExitLoop
+                EndIf
       ElseIf _getProfileInt('Money') == $GUI_CHECKED Then
         RunMoneyManage($hWnd, $iSoftware, $idDebug)
       ElseIf _getProfileInt('Cash') == $GUI_CHECKED Then
@@ -1212,14 +1385,6 @@ Func RunOperation($iSoftware, $idProgress, $idDebug)
       ElseIf _getProfileInt('Login') == $GUI_CHECKED Then
         RunLoginOnly($hWnd, $idProgress, $iSoftware, $idDebug, $arAccountNumber, $arAccountPassword, $arAccountChecked, $iMax, $i)
         ExitLoop
-      ;~ ===================申购==========================
-      ElseIf _getProfileInt('ConvertBond') == $GUI_CHECKED Then
-        YinheConvertBond($hWnd, $idProgress, $idDebug, $arAccountNumber, $arAccountPassword, $arAccountChecked, $iMax, $i)
-;~    ===================查询==========================
-      ElseIf _getProfileInt('Allocate') == $GUI_CHECKED Then
-        If YinheAllocate($hWnd, $idProgress, $idDebug, $arAccountNumber, $arAccountPassword, $arAccountChecked, $iMax, $i) > 0 Then
-          ExitLoop
-        EndIf
       EndIf
       AppClose($hWnd, $idDebug)
     EndIf
@@ -1330,8 +1495,26 @@ Func _loadListViewAccount($iSoftware, $idListViewAccount, ByRef $arCheckboxAccou
   Next
 EndFunc
 
+; ---------- 函数：获取勾选的基金 ----------
+Func _GetCheckedFunds($idListViewFund)
+    Local $sSelected = ""
+
+    Local $iCount = _GUICtrlListView_GetItemCount($idListViewFund)
+    For $i = 0 To $iCount - 1
+        ; 判断第 i 行是否勾选
+        If BitAND(_GUICtrlListView_GetItemState($idListViewFund, $i, $LVIS_STATEIMAGEMASK), 0xF000) = 0x2000 Then
+            $sSelected &= _GUICtrlListView_GetItemText($idListViewFund, $i) & "|"
+        EndIf
+    Next
+
+    ; 去掉最后一个分隔符
+    If StringLen($sSelected) > 0 Then $sSelected = StringTrimRight($sSelected, 1)
+
+    Return $sSelected
+EndFunc
+
 Func AppMain()
-  $idFormMain = GUICreate("通达信单独委托版全自动拖拉机0.76", 803, 590, 289, 0)
+  $idFormMain = GUICreate("通达信单独委托版全自动拖拉机0.93", 803, 590, 289, 0)
 
   $idListViewAccount = GUICtrlCreateListView("客户号", 24, 24, 146, 552, BitOR($GUI_SS_DEFAULT_LISTVIEW,$WS_VSCROLL), BitOR($WS_EX_CLIENTEDGE,$LVS_EX_CHECKBOXES))
   GUICtrlSendMsg(-1, $LVM_SETCOLUMNWIDTH, 0, 118)
@@ -1341,8 +1524,31 @@ Func AppMain()
   $idMenuDel = GUICtrlCreateMenuItem('清除全部客户号记录', $idMenuAccount)
 
   $idLabelSymbol = GUICtrlCreateLabel("基金代码", 192, 24, 52, 17)
-  $idListSymbol = GUICtrlCreateList("", 192, 48, 121, 97)
-  GUICtrlSetData(-1, '160216|160416|160717|161116|161124|161125|161126|161127|161128|161129|161130|161226|162411|162415|163208|164824|164906|501225|501300|501018', _getProfileString('Symbol', '161116'))
+  ;~ $idListSymbol = GUICtrlCreateList("", 192, 48, 121, 97)
+  ;~ GUICtrlSetData(-1, '160216|160416|160717|161116|161124|161125|161126|161127|161128|161129|161130|161226|162411|162415|163208|164824|164906|501225|501300|501018|501312', _getProfileString('Symbol', '161116'))
+
+  ; ---------- 基金列表 ----------
+  Global $aFunds[] = [ _
+    "160216", "160416", "160717", "161116", "161124", _
+    "161125", "161126", "161127", "161128", "161129", _
+    "161130", "161226", "162411", "162415", "163208", _
+    "164824", "164906", "501225", "501300", "501018", _
+    "501312" _
+  ]
+
+  ; ---------- 创建窗口 ----------
+  ;~ Global $hGUI = GUICreate("基金批量操作", 400, 500)
+
+  ; ---------- 创建 ListView 带勾选框 ----------
+  Global $idListSymbol = GUICtrlCreateListView("", 192, 48, 121, 97, BitOR($GUI_SS_DEFAULT_LISTVIEW, $WS_VSCROLL, $LVS_NOCOLUMNHEADER), BitOR($WS_EX_CLIENTEDGE, $LVS_EX_CHECKBOXES))
+  GUICtrlSendMsg($idListSymbol, $LVM_SETCOLUMNWIDTH, 0, 100)
+  ; ---------- 插入一列（标题可为空） ----------
+  _GUICtrlListView_InsertColumn($idListSymbol, 0, "", 100) ; 100 = 列宽
+
+  ; ---------- 填充基金 ----------
+  For $i = 0 To UBound($aFunds) - 1
+      _GUICtrlListView_AddItem($idListSymbol, $aFunds[$i])
+  Next
 
   $idLabelSellPrice = GUICtrlCreateLabel("卖出价格", 192, 160, 52, 17)
   $idInputSellPrice = GUICtrlCreateInput("", 192, 184, 121, 21)
@@ -1361,9 +1567,9 @@ Func AppMain()
 
   $GroupSoftware = GUICtrlCreateGroup("软件", 336, 400, 225, 81)
   $iSoftware = 0
-  $RadioYinhe = GUICtrlCreateRadio("银河证券海王星单独委托版3.16", 352, 424, 193, 17)
+  $RadioYinhe = GUICtrlCreateRadio("银河证券海王星单独委托版3.23", 352, 424, 193, 17)
   GUICtrlSetState(-1, _getRadioState($RadioYinhe, $iSoftware, 'Yinhe', $GUI_CHECKED))
-  $RadioHuabao = GUICtrlCreateRadio("华宝证券通达信版独立交易8.19", 352, 448, 193, 17)
+  $RadioHuabao = GUICtrlCreateRadio("华宝证券通达信版独立交易8.25", 352, 448, 193, 17)
   GUICtrlSetState(-1, _getRadioState($RadioHuabao, $iSoftware, 'Huabao', $GUI_UNCHECKED))
   GUICtrlCreateGroup("", -99, -99, 1, 1)
   $iMax = _onRadioSoftware($iSoftware, $RadioYinhe, $RadioHuabao)
@@ -1466,7 +1672,8 @@ Func AppMain()
         For $i = 0 to $iMax - 1
           _putProfileInt($strPrefix & 'AccountState' & String($i), GUICtrlRead($arCheckboxAccount[$i], $GUI_READ_EXTENDED))
         Next
-        _putProfileString('Symbol', GUICtrlRead($idListSymbol))
+
+        _putProfileString('Symbol', _GetCheckedFunds($idListSymbol))
         _putProfileInt('Cash', GUICtrlRead($RadioCash))
         _putProfileInt('Money', GUICtrlRead($RadioMoney))
         _putProfileInt('Order', GUICtrlRead($RadioOrder))
