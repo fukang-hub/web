@@ -1338,7 +1338,7 @@ Func RunOperation($iSoftware, $idProgress, $idDebug)
 				EndIf
 			ElseIf _getProfileInt('OrderOutTransfer') == $GUI_CHECKED Then
 				If ($iSoftware == $YINHE) Then
-					YinheOrderOutTransferFund($hWnd, $idDebug, $strSymbol)
+					YinheOrderOutTransferFundBatch($hWnd, $idDebug, $strSymbol)
 				Else
 					_CtlDebug($idDebug, "华宝PC端不支持转托管...")
 				EndIf
@@ -1479,6 +1479,25 @@ Func _loadListViewAccount($iSoftware, $idListViewAccount, ByRef $arCheckboxAccou
 	Next
 EndFunc
 
+
+; ---------- 函数：获取勾选的基金 ----------
+Func _GetCheckedFunds($idListViewFund)
+    Local $sSelected = ""
+
+    Local $iCount = _GUICtrlListView_GetItemCount($idListViewFund)
+    For $i = 0 To $iCount - 1
+        ; 判断第 i 行是否勾选
+        If BitAND(_GUICtrlListView_GetItemState($idListViewFund, $i, $LVIS_STATEIMAGEMASK), 0xF000) = 0x2000 Then
+            $sSelected &= _GUICtrlListView_GetItemText($idListViewFund, $i) & "|"
+        EndIf
+    Next
+
+    ; 去掉最后一个分隔符
+    If StringLen($sSelected) > 0 Then $sSelected = StringTrimRight($sSelected, 1)
+
+    Return $sSelected
+EndFunc
+
 Func AppMain()
 	$idFormMain = GUICreate("通达信单独委托版全自动拖拉机0.93", 803, 590, 289, 0)
 
@@ -1489,32 +1508,32 @@ Func AppMain()
 	$idMenuEdit = GUICtrlCreateMenuItem('添加或者修改选中客户号', $idMenuAccount)
 	$idMenuDel = GUICtrlCreateMenuItem('清除全部客户号记录', $idMenuAccount)
 
-  $idLabelSymbol = GUICtrlCreateLabel("基金代码", 192, 24, 52, 17)
-  ;~ $idListSymbol = GUICtrlCreateList("", 192, 48, 121, 97)
-  ;~ GUICtrlSetData(-1, '160216|160416|160717|161116|161124|161125|161126|161127|161128|161129|161130|161226|162411|162415|163208|164824|164906|501225|501300|501018|501312', _getProfileString('Symbol', '161116'))
+    $idLabelSymbol = GUICtrlCreateLabel("基金代码", 192, 24, 52, 17)
+    ;~ $idListSymbol = GUICtrlCreateList("", 192, 48, 121, 97)
+    ;~ GUICtrlSetData(-1, '160216|160416|160717|161116|161124|161125|161126|161127|161128|161129|161130|161226|162411|162415|163208|164824|164906|501225|501300|501018|501312', _getProfileString('Symbol', '161116'))
 
-  ; ---------- 基金列表 ----------
-  Global $aFunds[] = [ _
-    "160216", "160416", "160717", "161116", "161124", _
-    "161125", "161126", "161127", "161128", "161129", _
-    "161130", "161226", "162411", "162415", "163208", _
-    "164824", "164906", "501225", "501300", "501018", _
-    "501312" _
-  ]
+    ; ---------- 基金列表 ----------
+    Global $aFunds[] = [ _
+      "160216", "160416", "160717", "161116", "161124", _
+      "161125", "161126", "161127", "161128", "161129", _
+      "161130", "161226", "162411", "162415", "163208", _
+      "164824", "164906", "501225", "501300", "501018", _
+      "501312" _
+    ]
 
-  ; ---------- 创建窗口 ----------
-  ;~ Global $hGUI = GUICreate("基金批量操作", 400, 500)
+    ; ---------- 创建窗口 ----------
+    ;~ Global $hGUI = GUICreate("基金批量操作", 400, 500)
 
-  ; ---------- 创建 ListView 带勾选框 ----------
-  Global $idListSymbol = GUICtrlCreateListView("", 192, 48, 121, 97, BitOR($GUI_SS_DEFAULT_LISTVIEW, $WS_VSCROLL, $LVS_NOCOLUMNHEADER), BitOR($WS_EX_CLIENTEDGE, $LVS_EX_CHECKBOXES))
-  GUICtrlSendMsg($idListSymbol, $LVM_SETCOLUMNWIDTH, 0, 100)
-  ; ---------- 插入一列（标题可为空） ----------
-  _GUICtrlListView_InsertColumn($idListSymbol, 0, "", 100) ; 100 = 列宽
+    ; ---------- 创建 ListView 带勾选框 ----------
+    Global $idListSymbol = GUICtrlCreateListView("", 192, 48, 121, 97, BitOR($GUI_SS_DEFAULT_LISTVIEW, $WS_VSCROLL, $LVS_NOCOLUMNHEADER), BitOR($WS_EX_CLIENTEDGE, $LVS_EX_CHECKBOXES))
+    GUICtrlSendMsg($idListSymbol, $LVM_SETCOLUMNWIDTH, 0, 100)
+    ; ---------- 插入一列（标题可为空） ----------
+    _GUICtrlListView_InsertColumn($idListSymbol, 0, "", 100) ; 100 = 列宽
 
-  ; ---------- 填充基金 ----------
-  For $i = 0 To UBound($aFunds) - 1
-      _GUICtrlListView_AddItem($idListSymbol, $aFunds[$i])
-  Next
+    ; ---------- 填充基金 ----------
+    For $i = 0 To UBound($aFunds) - 1
+        _GUICtrlListView_AddItem($idListSymbol, $aFunds[$i])
+    Next
 
 	$idLabelSellPrice = GUICtrlCreateLabel("卖出价格", 192, 160, 52, 17)
 	$idInputSellPrice = GUICtrlCreateInput("", 192, 184, 121, 21)
