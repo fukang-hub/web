@@ -594,10 +594,10 @@ EndFunc
 Func YinheOrderOutTransferFundBatch($hWnd, $idDebug, $strSymbol)
     Local $aFunds = StringSplit($strSymbol, "|")
 
-    ; 判断是否拆分成功
-    If @error Then
-      MsgBox(16, "错误", "没有获取到任何基金")
-      Exit
+    ; 核心判断：拆分后有效元素个数为 0（空字符串），或元素为空（仅分隔符）
+    If $aFunds[0] = 0 Then
+        MsgBox(16, "错误", "没有获取到任何基金")
+        Exit
     EndIf
 
     _CtlDebug($idDebug, "YinheOrderOutTransferFund start...")
@@ -679,6 +679,13 @@ EndFunc
 
 Func YinheOrderOutFundBatch($hWnd, $idDebug, $strSymbol)
     Local $aFunds = StringSplit($strSymbol, "|")
+
+    ; 核心判断：拆分后有效元素个数为 0（空字符串），或元素为空（仅分隔符）
+    If $aFunds[0] = 0 Then
+        MsgBox(16, "错误", "没有获取到任何基金")
+        Exit
+    EndIf
+
     ; 获取 Afx 控件句柄
     Local $controlID = "[CLASS:Afx:10000000:0:00010003:00000000:00000000; INSTANCE:1]" ; 根据实际类名和实例号替换
     Local $hControl = ControlGetHandle($hWnd, "", $controlID)
@@ -692,12 +699,6 @@ Func YinheOrderOutFundBatch($hWnd, $idDebug, $strSymbol)
     ; 聚焦控件
     ControlFocus($hWnd, "", $hControl)
     ControlClick($hControl, '', '', 'Left', 1, 100, 50)
-
-    ; 确保控件句柄有效
-    If $hControl = 0 Then
-        MsgBox("ok", "Error", "无法获取 Afx 控件句柄。")
-        Exit
-    EndIf
 
     For $i = 1 To $aFunds[0]:
       Local $fundCode = $aFunds[$i]:
@@ -760,6 +761,11 @@ EndFunc
 
 Func YinheOrderFundBatch($hWnd, $idDebug, $strSymbol)
     Local $aFunds = StringSplit($strSymbol, "|")
+    ; 核心判断：拆分后有效元素个数为 0（空字符串），或元素为空（仅分隔符）
+    If $aFunds[0] = 0 Then
+       MsgBox(16, "错误", "没有获取到任何基金")
+       Exit
+    EndIf
 
     For $i = 1 To $aFunds[0]:
       Local $fundCode = $aFunds[$i]:
@@ -881,6 +887,13 @@ Func YinheConvertBond($hWnd, $idProgress, $idDebug, Const ByRef $arAccountNumber
 
 Func HuabaoOrderOutFundBatch($hWnd, $idDebug, $strSymbol)
     Local $aFunds = StringSplit($strSymbol, "|")
+
+    ; 核心判断：拆分后有效元素个数为 0（空字符串），或元素为空（仅分隔符）
+    If $aFunds[0] = 0 Then
+       MsgBox(16, "错误", "没有获取到任何基金")
+       Exit
+    EndIf
+
     ; 获取 Afx 控件句柄
     Local $controlID = "[CLASS:Afx:10000000:0:10003:0:0; INSTANCE:1]" ; 根据实际类名和实例号替换
     Local $hControl = ControlGetHandle($hWnd, "", $controlID)
@@ -961,6 +974,12 @@ EndFunc
 
 Func HuabaoOrderFundBatch($hWnd, $idDebug, $strSymbol)
     Local $aFunds = StringSplit($strSymbol, "|")
+
+    ; 核心判断：拆分后有效元素个数为 0（空字符串），或元素为空（仅分隔符）
+    If $aFunds[0] = 0 Then
+       MsgBox(16, "错误", "没有获取到任何基金")
+       Exit
+    EndIf
 
     For $i = 1 To $aFunds[0]:
       Local $fundCode = $aFunds[$i]:
